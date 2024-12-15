@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %}Hoş Geldiniz{% endblock %}
+
+{% block content %}
+    <div class="text-center">
+        <h1 class="display-4">Hoş Geldiniz!</h1>
+        <p class="lead">İşlemlerinize devam etmek için giriş yapabilirsiniz.</p>
+        <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Giriş Yap</a>
+    </div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}İHA Üretimi{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>İHA Üretimi</h4>
+            <a href="{% url 'create_assembly' %}" class="btn btn-outline-success mb-3">Montaj ve Üretim</a>
+        </div>
+
+        <table id="table" class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Montaj Kodu</th>
+                    <th>İHA Adı</th>
+                    <th>Parça Sayısı</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Veriler AJAX ile yüklenecek -->
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net/js/jquery.dataTables.min.js"></script>
+  <!-- DataTable'da veriler gösteriliyor ve nasıl gösterileceği belirleniyor -->
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('#table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '{% url "uav_production_list" %}',
+                    type: 'GET',
+                    dataSrc: 'data', 
+                },
+                columns: [
+                    { data: 'assembly_code', title: 'Montaj Kodu' },
+                    { data: 'uav_name', title: 'İHA Adı' },
+                    { data: 'part_count', title: 'Parça Sayısı' }
+                ],
+                language: {
+                    search: "Arama:",
+                    info: "_TOTAL_ kayıttan _START_ ile _END_ arası gösteriliyor",
+                    lengthMenu: "_MENU_ Kayıt Göster",
+                    paginate: {
+                        previous: 'Öncesi',
+                        next: 'Sonrası'
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Parça Düzenleme{% endblock %}
+
+{% block content %}
+    <div class="container py-5">
+        {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                {% if message.tags == 'success' %}
+                    <div class="alert alert-success" role="alert">
+                        {{ message }} 
+                    </div>
+                {% elif message.tags == 'error' %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ message }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4>Parça Üretimi Ekle</h4>
+            <a href="{% url 'partproduction' %}" class="btn btn-outline-success">Parça Listesi</a>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }} <!-- Düzenlenecek olan verilerin formdan dolu bir şekilde gelmesi -->
+            <button type="submit" class="btn btn-primary">Gönder</button>
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+{% endblock %}
