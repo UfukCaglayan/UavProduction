@@ -21,7 +21,7 @@ from DjangoAPI import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.login, name='login'),
+    path('', views.home, name='home'),
     path('login/', views.login, name='login'),
     path('partproduction/', views.partproduction, name='partproduction'),
     path('partproduction/list/', views.part_production_list, name='part_production_list'),  
@@ -30,7 +30,8 @@ urlpatterns = [
     path('partproduction/delete/<int:part_production_id>/', views.delete_partproduction, name='delete_partproduction'),
     path('assembly/', views.assembly, name='assembly'),
     path('assembly/create/', views.create_assembly, name='create_assembly'),
+    path('uav_production_list/', views.uav_production_list, name='uav_production_list'),
     path('get_parts_for_assembly/<int:assembly_id>/', views.get_parts_for_assembly, name='get_parts_for_assembly'),
-
+    path('logout/', views.custom_logout, name='logout'),
 
 ]
