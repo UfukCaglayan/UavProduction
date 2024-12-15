@@ -1,0 +1,27 @@
+.toast-message {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    display: none;
+    z-index: 9999;
+}
+.toast-error {
+    background-color: #dc3545;
+}
+
+/* Select genişlik ayarı */
+.select2-container {
+    width: 100% !important;
+}
+select.form-control {
+    width: 100% !important;
+}
+#missing_part, #mounted_part {
+display: block; 
+margin-top: 10px;
+}
