@@ -277,9 +277,9 @@ def create_assembly(request):
                 part_production_id = request.POST.get('part_production')
                 part_production = PartProduction.objects.get(part_production_id=part_production_id)
 
-                if part_production.stock_quantity > 0:
+                if part_production.stock > 0:
                     # Stoktan bir adet azalt
-                    part_production.stock_quantity -= 1
+                    part_production.stock -= 1
                     part_production.save()   
                 else:
                     return JsonResponse({
@@ -426,4 +426,4 @@ def uav_production_list(request):
 
 def custom_logout(request):
     logout(request)  # Oturumdan çıkış yap
-    return redirect('login')  # Giriş sayfasına yönlendir
+    return redirect('home')  # Anasayfaya yönlendir
