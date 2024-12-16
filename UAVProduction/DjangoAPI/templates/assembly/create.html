@@ -1,12 +1,43 @@
-{% extends 'base.html' %}
-{% load static %} 
-{% block extra_head %}
-    <link rel="stylesheet" href="{% static 'css/signin.css' %}">
-{% endblock %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Montaj ve Üretim</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* Toast mesaj stili */
+        .toast-message {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+            z-index: 9999;
+        }
+        .toast-error {
+            background-color: #dc3545;
+        }
 
-{% block title %}Montaj ve Uçak Üretimi{% endblock %}
-
-{% block content %}
+        /* Select genişlik ayarı */
+        .select2-container {
+            width: 100% !important;
+        }
+        select.form-control {
+            width: 100% !important;
+        }
+        #missing_part, #mounted_part {
+            display: block; 
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
     <div class="container mt-5">
         <h2>Montaj ve Uçak Üretimi</h2>
 
@@ -24,9 +55,9 @@
         <form id="assembly-form" method="post" style="display: none;">
             {% csrf_token %}
             <div class="mb-3">
-                <label for="uav" class="form-label">İHA Seçiniz</label>
+                <label for="uav" class="form-label">UAV Seçiniz</label>
                 {{ assembly_form.uav }}
-                <label  id="newAssemblyCode" style="display: none;" class="form-label"></label>
+                <label id="newAssemblyCode" style="display: none;" class="form-label"></label>
             </div>
             <button type="button" id="create-assembly-btn" class="btn btn-primary">Montaja Başla</button>
         </form>
@@ -37,18 +68,16 @@
                 {% csrf_token %}
                 <div class="mb-3">
                     <label for="assembly-select" class="form-label">Montaj Kodu Seçiniz</label>
-                    {{ part_form.assembly }} 
+                    {{ part_form.assembly }} <!-- assembly alanını burada kontrol edin -->
 
-                    <label  id="missing_part" style="display: none;" class="form-label"></label>
-                    <label  id="mounted_part" style="display: none;" class="form-label"></label>
-
-                    
+                    <label id="missing_part" style="display: none;" class="form-label"></label>
+                    <label id="mounted_part" style="display: none;" class="form-label"></label>
                 </div>
                 <div class="mb-3">
                     <label for="part-select" class="form-label">Parça Seçiniz</label>
-        <select name="part_production" id="part_production" class="form-control">
-            <!-- Başlangıçta boş olacak, montaj kodu seçimine göre dolacak -->
-        </select>
+                    <select name="part_production" id="part_production" class="form-control select2">
+                        <!-- Başlangıçta boş olacak, JavaScript ile dolacak -->
+                    </select>
                 </div>
                 <button type="button" id="add-part-btn" class="btn btn-success">Parçayı Ekle</button>
 
@@ -58,70 +87,28 @@
 
     </div>
 
+    <!-- Toast Mesajı -->
     <div id="toast" class="toast-message"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.full.min.js"></script>
     <script>
         $(document).ready(function () {
-           
-
-                $('#assembly-select').on('change', function() {
-        var assemblyId = $(this).val();
-
-        // Eğer bir montaj kodu seçildiysa, parçaları yüklemek için AJAX isteği gönderiliyor
-        if (assemblyId) {
-    fetch(`/get_parts_for_assembly/${assemblyId}/`)
-        .then(response => response.json())
-        .then(data => {
-            var partSelect = $('#part_production');
-            partSelect.empty();  // Mevcut parçaları temizle
-
-            // Yeni parçaları ekle
-            data.parts.forEach(function(part) {
-                var option = $('<option></option>').val(part.part_id).text(part.part_name);
-                partSelect.append(option);
+            // Select2 başlat
+            $('.select2').select2({
+                placeholder: "Bir seçenek seçin",
+                allowClear: true,
+                width: '100%'  // Select2'nin genişliğini kontrol edin
             });
 
-            if (data.missing_parts.length > 0) {
-                var missingPartsLabel = $('#missing_part');
-                var missingPartsText = `${data.uav_name} için envanterde olmayan parçalar:  `;
-                
-                // Eksik parçaları listele
-                data.missing_parts.forEach(function(missing_part) {
-                    missingPartsText += `${missing_part}, `;
-                });
+            // Seçilen montaj kodunu yükle
+            $('#id_uav').select2({
+                placeholder: "Seçiniz",  // Placeholder metni
+                allowClear: true,
+                width: '100%'
+            });
 
-                // Son virgülü kaldır
-                missingPartsLabel.text(missingPartsText.slice(0, -2));  
-                missingPartsLabel.css('color', 'red');  
-                missingPartsLabel.show();
-            } else {
-                $('#missing_part').text(`${data.uav_name} için bütün parçalar envanterde mevcut:  `).show();
-                $('#missing_part').css('color', 'green'); 
-            }
-            if (data.mounted_parts_data.length > 0) {
-                show_mounted_part(data.mounted_parts_data)
-            }  else {
-                $('#mounted_part').text('Henüz takılı parça yok.').show();
-                $('#mounted_part').css('color', 'red'); 
-            }
-        })
-        .catch(error => console.error('Error:', error));
-}
-    });
-
-    $('.select2').select2({
-        placeholder: "Bir seçenek seçin",
-        allowClear: true,
-        width: '100%'  
-    });
-    $('#id_uav').select2({
-        placeholder: "Seçiniz",  
-        allowClear: true,
-        width: '100%'
-    });
-            // İşlem seçimine göre bölümleri gösterme
+            // İşlem seçimine göre bölümleri göster
             $('#process-select').on('change', function () {
                 const selectedValue = $(this).val();
                 $('#assembly-form, #assembly-section').hide(); // Tüm bölümleri gizle
@@ -139,79 +126,126 @@
                 const formData = $('#assembly-form').serialize();
                 $.post('', formData + '&create_assembly=true', function (response) {
                     if (response.success) {
-                        // Yeni montaj kodunu dropdowna ekleme
+                        // Yeni montaj kodunu ekleyin
                         const newOption = new Option(response.assembly_code, response.assembly_id, false, false);
                         $('#assembly-select').append(newOption).trigger('change');
-                        $('#newAssemblyCode').text('Montaj Kodu: ' + response.assembly_code).css('display', 'block'); //Montaj kodunun labelde gösterilmesi
-                        showToast('Montaj başarıyla başlatıldı!');  
+                        $('#newAssemblyCode').text('Montaj Kodu: ' + response.assembly_code).css('display', 'block');
+                        showToast('Montaj başarıyla başlatıldı!');  // Başarı mesajı
                     } else {
-                        showToast('Bir hata oluştu!', true);  
+                        showToast('Bir hata oluştu!', true);  // Hata mesajı
                     }
                 });
             });
 
-            // Monte işlemi - parça ekleme
+            // Montaj kodu seçildiğinde parçaları yükle
+            $('#assembly-select').on('change', function() {
+                var assemblyId = $(this).val();
+
+                // Eğer bir montaj kodu seçildiyse, parçaları yüklemek için AJAX isteği gönderin
+                if (assemblyId) {
+                    fetch(`/get_parts_for_assembly/${assemblyId}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            var partSelect = $('#part_production');
+                            partSelect.empty();  // Mevcut parçaları temizle
+
+                            // Yeni parçaları ekle
+                            data.parts.forEach(function(part) {
+                                var option = $('<option></option>').val(part.part_id).text(part.part_name);
+                                partSelect.append(option);
+                            });
+
+                            if (data.missing_parts.length > 0) {
+                                var missingPartsLabel = $('#missing_part');
+                                var missingPartsText = `${data.uav_name} için envanterde olmayan parçalar: `;
+
+                                // Eksik parçaları listele
+                                data.missing_parts.forEach(function(missing_part) {
+                                    missingPartsText += `${missing_part}, `;
+                                });
+
+                                // Son virgülü kaldır
+                                missingPartsLabel.text(missingPartsText.slice(0, -2));  
+                                missingPartsLabel.css('color', 'red');  // Sets the text color to red
+                                missingPartsLabel.show();
+                            } else {
+                                $('#missing_part').text(`${data.uav_name} için bütün parçalar envanterde mevcut.`).show();
+                                $('#missing_part').css('color', 'green'); 
+                            }
+
+                            if (data.mounted_parts_data.length > 0) {
+                                showMountedParts(data.mounted_parts_data);
+                            } else {
+                                // Takılı parça yoksa
+                                $('#mounted_part').text('Henüz takılı parça yok.').show();
+                                $('#mounted_part').css('color', 'red'); 
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
+                }
+            });
+
+            // Parça ekleme işlemi
             $('#add-part-btn').on('click', function () {
-    const formData = $('#part-form').serialize();
-    $.post('', formData + '&add_part=true', function (response) {
-        if (response.success) {
-            if (response.mounted_parts_data.length > 0) { //Takılı parçaların kontrolü
-                show_mounted_part(response.mounted_parts_data);  
-            } else {
-                $('#mounted_part').text('Henüz takılı parça yok.').show(); 
-                $('#mounted_part').css('color', 'red');
-            }
-            showToast('Parça başarıyla eklendi!');  //Toast ile başararı metnini gösterme
-        } else {
-            if (response.message) {
-                showToast(response.message,true);  
-            } else {
-                showToast('Parça eklenirken bir hata oluştu!', true);  //Toast ile hata metnini gösterme
-            }
-        }
-    });
-});
+                const formData = $('#part-form').serialize();
+                $.post('', formData + '&add_part=true', function (response) {
+                    if (response.success) {
+                        if (response.mounted_parts_data.length > 0) {
+                            showMountedParts(response.mounted_parts_data);
+                        } else {
+                            $('#mounted_part').text('Henüz takılı parça yok.').show();
+                            $('#mounted_part').css('color', 'red');
+                        }
+                        showToast('Parça başarıyla eklendi!');  
+                    } else {
+                        if (response.message) {
+                            showToast(response.message, true);  // Parça zaten takılıysa mesaj göster
+                        } else {
+                            showToast('Parça eklenirken bir hata oluştu!', true);  // Hata mesajı
+                        }
+                    }
+                });
+            });
 
-
+            // Üretimi tamamlama işlemi
             $('#complete-production-btn').on('click', function () {
-    const formData = $('#part-form').serialize();  // Form verilerini al
-    $.post('', formData + '&complete_production=true', function (response) {
-        if (response.success) {
-            showToast('Üretim başarıyla tamamlandı!');  
-        } else {
-            const errorMessage = response.error || 'Üretim tamamlanırken bir hata oluştu!';
-            showToast(errorMessage, true); 
-        }
-    });
-});
+                const formData = $('#part-form').serialize();  // Form verilerini al
+                $.post('', formData + '&complete_production=true', function (response) {
+                    if (response.success) {
+                        showToast('Üretim başarıyla tamamlandı!');  // Başarı mesajı
+                    } else {
+                        const errorMessage = response.error || 'Üretim tamamlanırken bir hata oluştu!';
+                        showToast(errorMessage, true);  // Hata mesajı
+                    }
+                });
+            });
 
-        });
-
-        function showToast(message, isError = false) {
-            const toast = $('#toast');
-            toast.text(message);
-            if (isError) {
-                toast.addClass('toast-error');
-            } else {
-                toast.removeClass('toast-error');
+            // Toast mesajını göster
+            function showToast(message, isError = false) {
+                const toast = $('#toast');
+                toast.text(message);
+                if (isError) {
+                    toast.addClass('toast-error');
+                } else {
+                    toast.removeClass('toast-error');
+                }
+                toast.fadeIn(300).delay(3000).fadeOut(300);
             }
-            toast.fadeIn(300).delay(3000).fadeOut(300);
-        }
-        function show_mounted_part(mounted_parts_data)
-{
-        var mountedPartsLabel = $('#mounted_part');
-                var mountedPartsText = `Uçağa takılı parçalar:  `;
-                
-                // Takılı parçaları listele
+
+            // Takılı parçaları göster
+            function showMountedParts(mounted_parts_data) {
+                var mountedPartsLabel = $('#mounted_part');
+                var mountedPartsText = 'Uçağa takılı parçalar: ';
+
                 mounted_parts_data.forEach(function(mounted_part) {
                     mountedPartsText += `${mounted_part.part_name}, `;
                 });
 
-                // Son virgülü kaldır
-                mountedPartsLabel.text(mountedPartsText.slice(0, -2));  
-                mountedPartsLabel.css('color', 'green');  
+                mountedPartsLabel.text(mountedPartsText.slice(0, -2));
+                mountedPartsLabel.css('color', 'green');
                 mountedPartsLabel.show();
-}
-      
+            }
+        });
     </script>
-{% endblock %}
+</body>
+</html>
